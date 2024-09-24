@@ -1804,6 +1804,14 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
     if (!CI) {
       llvm::Value *Src = transValue(BC->getSource(), F, BB);
+      if (auto *cast = dyn_cast<CastInst>(Src)) {
+        auto CastOp = cast->getOperand(0);
+        if (auto *GO = dyn_cast<GlobalObject>(CastOp))
+          if (GO->hasOneUser())
+            //  If the cast is the only user of GO it's safe to apply the
+            //  alignment required by the memcpy.
+            GO->setAlignment(SrcAlign);
+      }
       CI = Builder.CreateMemCpy(Dst, Align, Src, SrcAlign, Size, IsVolatile);
     }
     if (isFuncNoUnwind())
