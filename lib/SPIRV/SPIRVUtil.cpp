@@ -51,6 +51,7 @@
 #include "SPIRVMDWalker.h"
 #include "libSPIRV/SPIRVDecorate.h"
 #include "libSPIRV/SPIRVValue.h"
+#include "test.inc"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
@@ -449,35 +450,40 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
     DemangledName = Name.drop_front(2);
     return true;
   }
+  // All mangled names should start with "_Z". Otherwise, just return false.
   if (!Name.starts_with("_Z"))
     return false;
-  // OpenCL C++ built-ins are declared in cl namespace.
-  // TODO: consider using 'St' abbriviation for cl namespace mangling.
-  // Similar to ::std:: in C++.
-  if (IsCpp) {
-    if (!Name.starts_with("_ZN"))
-      return false;
-    // Skip CV and ref qualifiers.
-    size_t NameSpaceStart = Name.find_first_not_of("rVKRO", 3);
-    // All built-ins are in the ::cl:: namespace.
-    if (Name.substr(NameSpaceStart, 11) != "2cl7__spirv")
-      return false;
-    size_t DemangledNameLenStart = NameSpaceStart + 11;
-    size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
-    size_t Len = 0;
-    if (!Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
-             .getAsInteger(10, Len)) {
-      DemangledName = Name.substr(Start, Len);
-      return true;
-    }
-    SPIRVDBG(errs() << "Error in extracting integer value");
-    return false;
-  }
+
+  // After "_Z", we have a number being the length of the next identifier. The
+  // next identifier after the number is the function name, so the start of the
+  // function name should be the first non-number character after "_Z".
   size_t Start = Name.find_first_not_of("0123456789", 2);
   size_t Len = 0;
+  // Now we know the start index of the function name ('Start'), and also the
+  // start index of the length of the function name ('2'). Take the length of
+  // the function name by first constructing the substring, and then taking it
+  // as an integer. It will be stored in 'Len'. 'getAsInteger' returns true if
+  // the string does not solely consist of a valid non-empty number in the
+  // appropriate base, so 'Len' is valid only if it returns false.
   if (!Name.substr(2, Start - 2).getAsInteger(10, Len)) {
+    // Now we also know the lenght of the function name, so we can construct the
+    // substring with only the function name.
     DemangledName = Name.substr(Start, Len);
-    return true;
+
+    // If DemangledName starts with '__spirv_', we will assume it is a valid
+    // SPIRV-friendly builtin. '__' is reserved by systems and compilers, so
+    // users shouldn't be using '__spirv_' for their identifiers.
+    if (DemangledName.starts_with("__spirv_"))
+      return true;
+
+    // WORKAROUND: JUST FOR TESTING PURPOSES
+    if (DemangledName.starts_with("intel_sub_group_avc"))
+      return true;
+
+    // Otherwise, we need to check if it's a valid OpenCL builtin.
+    // 'isOpenCLBuiltin' returns a pair<int, int>. If both components are 0, it
+    // means 'DemangledName' is not a valid OpenCL builtin.
+    return isOpenCLBuiltin(DemangledName);
   }
   SPIRVDBG(errs() << "Error in extracting integer value");
   return false;

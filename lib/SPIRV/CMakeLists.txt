@@ -70,3 +70,10 @@ target_include_directories(LLVMSPIRVLib
     ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
     ${CMAKE_CURRENT_SOURCE_DIR}/Mangler
 )
+
+set(LLVM_TABLEGEN_PROJECT LLVM)
+set(LLVM_TARGET_DEFINITIONS test.td)
+message(STATUS "LLVM_TABLEGEN_PROJECT: ${LLVM_TABLEGEN_PROJECT}")
+message(STATUS "LLVM_TARGET_DEFINITIONS: ${LLVM_TARGET_DEFINITIONS}")
+tablegen(LLVM test.inc -gen-opencl-builtins)
+add_public_tablegen_target(test)

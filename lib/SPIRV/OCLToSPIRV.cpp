@@ -204,7 +204,11 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
 
   auto MangledName = F->getName();
   StringRef DemangledName;
-  if (!oclIsBuiltin(MangledName, DemangledName))
+  bool res = oclIsBuiltin(MangledName, DemangledName);
+  std::cout << "oclIsBuiltin(" << MangledName.str() << ", "
+            << DemangledName.str() << ") = " << res << "\n";
+  // if (!oclIsBuiltin(MangledName, DemangledName))
+  if (!res)
     return;
 
   LLVM_DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');

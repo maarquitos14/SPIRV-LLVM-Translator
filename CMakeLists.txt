@@ -7,6 +7,7 @@ set(LLVM_SPIRV_VERSION ${BASE_LLVM_VERSION}.0)
 
 include(FetchContent)
 include(FindPkgConfig)
+include(TableGen)
 
 option(LLVM_SPIRV_INCLUDE_TESTS
   "Generate build targets for the llvm-spirv lit tests."
@@ -174,3 +175,5 @@ install(
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/lib${LLVM_LIBDIR_SUFFIX}/pkgconfig
 )
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
