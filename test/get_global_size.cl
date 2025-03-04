@@ -1,7 +1,7 @@
 // RUN: %clang_cc1 -triple spir64 -fdeclare-opencl-builtins -finclude-default-header -emit-llvm-bc %s -o %t.bc
-// RUN: llvm-spirv %t.bc -o %t.spv
+// RUN: amd-llvm-spirv %t.bc -o %t.spv
 // RUN: spirv-val %t.spv
-// RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
+// RUN: amd-llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
 
 // Check that out of range dimension index values are handled according to the
 // OpenCL C specification.
