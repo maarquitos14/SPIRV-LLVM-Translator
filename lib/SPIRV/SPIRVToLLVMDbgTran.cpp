@@ -1408,7 +1408,84 @@ DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
       Scope, Name, ConfigMacros, IncludePath, ApiNotes, File, Line, IsDecl);
 }
 
+template <>
+Type *SPIRVToLLVMDbgTran::transDIOpOperand(const SPIRVExtInst *DbgOpInst,
+                                           unsigned Idx) {
+  const SPIRVWordVec &Operands = DbgOpInst->getArguments();
+  SPIRVType *Ty = BM->get<SPIRVType>(Operands[Idx]);
+  return SPIRVReader->transType(Ty);
+}
+
+template <>
+uint32_t SPIRVToLLVMDbgTran::transDIOpOperand(const SPIRVExtInst *DbgOpInst,
+                                              unsigned Idx) {
+  const SPIRVWordVec &Operands = DbgOpInst->getArguments();
+  return getConstantValueOrLiteral(Operands, Idx, DbgOpInst->getExtSetKind());
+}
+
+template <>
+ConstantData *
+SPIRVToLLVMDbgTran::transDIOpOperand(const SPIRVExtInst *DbgOpInst,
+                                     unsigned Idx) {
+  const SPIRVWordVec &Operands = DbgOpInst->getArguments();
+  SPIRVValue *Val = BM->get<SPIRVValue>(Operands[Idx]);
+  return cast<ConstantData>(SPIRVReader->transValue(Val, nullptr, nullptr));
+}
+
+MDNode *
+SPIRVToLLVMDbgTran::tryTransDIOpDIExpression(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::Operation;
+
+  auto getOpcodeFromInst = [this](const SPIRVExtInst *OpInst) {
+    return static_cast<SPIRVDebug::ExpressionOpCode>(getConstantValueOrLiteral(
+        OpInst->getArguments(), OpCodeIdx, OpInst->getExtSetKind()));
+  };
+
+  const SPIRVWordVec &Args = DebugInst->getArguments();
+
+  // DIOp-based DIExpressions can't be empty.
+  if (Args.empty())
+    return nullptr;
+  const SPIRVExtInst *FirstOp = BM->get<SPIRVExtInst>(Args[0]);
+  // Check if this is a DW_OP-based expression.
+  if (getOpcodeFromInst(FirstOp) < SPIRVDebug::DIOp_Begin)
+    return nullptr;
+
+  std::vector<llvm::DIOp::Variant> DIOps;
+  for (SPIRVId A : Args) {
+    SPIRVExtInst *DbgOpInst = BM->get<SPIRVExtInst>(A);
+    auto Opcode = getOpcodeFromInst(DbgOpInst);
+    auto BitcodeID = SPIRV::DbgExpressionDIOpBasedOpCodeMap::rmap(Opcode);
+
+#define HANDLE_OP0(Name)                                                       \
+  case DIOp::Name::getBitcodeID():                                             \
+    DIOps.push_back(DIOp::Name());                                             \
+    break;
+#define HANDLE_OP1(Name, OpType, OpName)                                       \
+  case DIOp::Name::getBitcodeID():                                             \
+    DIOps.push_back(DIOp::Name(transDIOpOperand<OpType>(DbgOpInst, 1)));       \
+    break;
+#define HANDLE_OP2(Name, OpType1, OpName1, OpType2, OpName2)                   \
+  case DIOp::Name::getBitcodeID(): {                                           \
+    OpType1 First = transDIOpOperand<OpType1>(DbgOpInst, 1);                   \
+    OpType2 Second = transDIOpOperand<OpType2>(DbgOpInst, 2);                  \
+    DIOps.push_back(DIOp::Name(First, Second));                                \
+    break;                                                                     \
+  }
+
+    switch (BitcodeID) {
+    default:
+      llvm_unreachable("translating unknown DIOp!");
+#include "llvm/IR/DIExprOps.def"
+    }
+  }
+  return DIExpression::get(M->getContext(), bool(), DIOps);
+}
+
 MDNode *SPIRVToLLVMDbgTran::transExpression(const SPIRVExtInst *DebugInst) {
+  if (MDNode *N = tryTransDIOpDIExpression(DebugInst))
+    return N;
+
   const SPIRVWordVec &Args = DebugInst->getArguments();
   std::vector<uint64_t> Ops;
   for (SPIRVId A : Args) {
