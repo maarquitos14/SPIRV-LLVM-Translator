@@ -239,7 +239,7 @@ void SPIRVToOCLBase::visitCastInst(CastInst &Cast) {
       !isa<UIToFPInst>(Cast) && !isa<SIToFPInst>(Cast))
     return;
 
-  if (M->getTargetTriple() == "amdgcn-amd-amdhsa")
+  if (M->getTargetTriple().getVendor() == Triple::VendorType::AMD)
     return;
 
   Type const *SrcTy = Cast.getSrcTy();
@@ -755,8 +755,10 @@ SPIRVToOCLBase::mutateCallImageOperands(CallInst *CI, StringRef NewFuncName,
       ConstantFP *LodVal = dyn_cast<ConstantFP>(Mutator.getArg(ImOpArgIndex));
       // If the image operand is LOD and its value is zero, drop it too.
       if (LodVal && LodVal->isNullValue() &&
-          ImOpValue == ImageOperandsMask::ImageOperandsLodMask)
+          ImOpValue & ImageOperandsMask::ImageOperandsLodMask) {
         Mutator.removeArgs(ImOpArgIndex, Mutator.arg_size() - ImOpArgIndex);
+        ImOpValue &= ~ImageOperandsMask::ImageOperandsLodMask;
+      }
     }
   }
   return Mutator;
