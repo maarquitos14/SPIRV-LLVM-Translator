@@ -596,7 +596,9 @@ enum {
   VariableIdx                = 7,
   FlagsIdx                   = 8,
   StaticMemberDeclarationIdx = 9,
-  MinOperandCount            = 9
+  MinOperandCount            = 9,
+  DIOpBasedExprIdx           = 10,
+  MaxOperandCount            = 11,
 };
 }
 

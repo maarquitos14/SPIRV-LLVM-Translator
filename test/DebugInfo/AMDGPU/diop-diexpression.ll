@@ -13,7 +13,7 @@
 ; CHECK-NEXT: DW_AT_external
 ; CHECK-NEXT: DW_AT_decl_file ("t.cpp")
 ; CHECK-NEXT: DW_AT_decl_line (3)
-; CHECK-NEXT: DW_AT_location (DW_OP_addrx
+; CHECK-NEXT: DW_AT_location ({{.*}} DW_OP_lit0, DW_OP_LLVM_user DW_OP_LLVM_form_aspace_address)
 
 ; CHECK: DW_TAG_variable
 ; CHECK-NEXT: DW_AT_location ({{.*}} DW_OP_lit5, DW_OP_LLVM_user DW_OP_LLVM_form_aspace_address)

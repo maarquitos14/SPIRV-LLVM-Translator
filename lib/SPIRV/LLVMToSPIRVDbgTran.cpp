@@ -1208,7 +1208,7 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
     Ops.push_back(transDbgEntry(StaticMember)->getId());
 
   // Check if Ops[VariableIdx] has no information
-  if (isNonSemanticDebugInfo() && Ops[VariableIdx] == getDebugInfoNoneId()) {
+  if (isNonSemanticDebugInfo()) {
     // Check if GV has an associated GVE with a non-empty DIExpression.
     // The non-empty DIExpression gives the initial value of the GV.
     for (const DIGlobalVariableExpression *GVE : DIF.global_variables()) {
@@ -1216,6 +1216,14 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
           GVE->getVariable() == GV &&
           // DIExpression is non-empty
           GVE->getExpression()->getNumElements()) {
+        if (Ops[VariableIdx] != getDebugInfoNoneId()) {
+          if (GVE->getExpression()->holdsNewElements()) {
+            Ops.resize(MaxOperandCount, getDebugInfoNoneId());
+            Ops[DIOpBasedExprIdx] =
+              transDbgExpression(GVE->getExpression())->getId();
+          }
+          break;
+        }
         // Repurpose VariableIdx operand to hold the initial value held in the
         // GVE's DIExpression
         Ops[VariableIdx] = transDbgExpression(GVE->getExpression())->getId();
@@ -1632,8 +1640,6 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
   SPIRVWordVec Operations;
 
   if (auto NewElems = Expr->getNewElementsRef()) {
-    using namespace SPIRVDebug::Operand::Operation;
-
     if (!(BM->allowExtraDIExpressions() ||
           BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200))
       report_fatal_error(
@@ -1693,12 +1699,11 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
     SPIRVDebug::ExpressionOpCode OC =
         SPIRV::DbgExpressionOpCodeMap::map(DWARFOpCode);
     if (OpCountMap.find(OC) == OpCountMap.end())
-      report_fatal_error(llvm::Twine("unknown opcode found in DIExpression"));
+      report_fatal_error("unknown opcode found in DIExpression");
     if (OC > SPIRVDebug::Fragment &&
         !(BM->allowExtraDIExpressions() ||
           BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200))
-      report_fatal_error(
-          llvm::Twine("unsupported opcode found in DIExpression"));
+      report_fatal_error("unsupported opcode found in DIExpression");
 
     unsigned OpCount = OpCountMap[OC];
     SPIRVWordVec Op(OpCount);

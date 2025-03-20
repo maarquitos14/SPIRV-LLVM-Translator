@@ -1125,7 +1125,8 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   StringRef LinkageName = getString(Ops[LinkageNameIdx]);
 
   DIDerivedType *StaticMemberDecl = nullptr;
-  if (Ops.size() > MinOperandCount) {
+  if (Ops.size() > MinOperandCount &&
+      !getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[StaticMemberDeclarationIdx])) {
     StaticMemberDecl = transDebugInst<DIDerivedType>(
         BM->get<SPIRVExtInst>(Ops[StaticMemberDeclarationIdx]));
   }
@@ -1137,6 +1138,9 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   if (getDbgInst<SPIRVDebug::Expression>(Ops[VariableIdx]))
     DIExpr =
         transDebugInst<DIExpression>(BM->get<SPIRVExtInst>(Ops[VariableIdx]));
+  else if (Ops.size() > DIOpBasedExprIdx)
+    DIExpr = transDebugInst<DIExpression>(
+        BM->get<SPIRVExtInst>(Ops[DIOpBasedExprIdx]));
 
   SPIRVWord Flags =
       getConstantValueOrLiteral(Ops, FlagsIdx, DebugInst->getExtSetKind());
@@ -1158,7 +1162,7 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
 
   // Ops[VariableIdx] was not used to hold an Expression with the initial value
   // for the GlobalVariable
-  if (!DIExpr) {
+  if (!DIExpr || Ops.size() > DIOpBasedExprIdx) {
     // If the variable has no initializer Ops[VariableIdx] is OpDebugInfoNone.
     // Otherwise Ops[VariableIdx] may be a global variable or a constant(C++
     // static const).
