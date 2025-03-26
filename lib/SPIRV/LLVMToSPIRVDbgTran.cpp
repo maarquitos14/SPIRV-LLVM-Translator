@@ -1217,11 +1217,13 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
           // DIExpression is non-empty
           GVE->getExpression()->getNumElements()) {
         if (Ops[VariableIdx] != getDebugInfoNoneId()) {
+#ifdef SPIRV_HAS_DIOP_DIEXPRESSION
           if (GVE->getExpression()->holdsNewElements()) {
             Ops.resize(MaxOperandCount, getDebugInfoNoneId());
             Ops[DIOpBasedExprIdx] =
               transDbgExpression(GVE->getExpression())->getId();
           }
+#endif
           break;
         }
         // Repurpose VariableIdx operand to hold the initial value held in the
@@ -1639,6 +1641,7 @@ void LLVMToSPIRVDbgTran::transDIOpOperand(SPIRVWordVec &Vec, unsigned Idx,
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
   SPIRVWordVec Operations;
 
+#ifdef SPIRV_HAS_DIOP_DIEXPRESSION
   if (auto NewElems = Expr->getNewElementsRef()) {
     if (!(BM->allowExtraDIExpressions() ||
           BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200))
@@ -1691,6 +1694,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
 
     return BM->addDebugInfo(SPIRVDebug::Expression, getVoidTy(), Operations);
   }
+#endif
 
   for (unsigned I = 0, N = Expr->getNumElements(); I < N; ++I) {
     using namespace SPIRVDebug::Operand::Operation;
