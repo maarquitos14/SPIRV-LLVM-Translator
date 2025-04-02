@@ -1152,8 +1152,10 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   bool IsDefinition = Flags & SPIRVDebug::FlagIsDefinition;
   MDNode *VarDecl = nullptr;
   if (IsDefinition) {
+#ifdef SPIRV_HAS_DIOP_DIEXPRESSION
     if (DIExpr && DIExpr->holdsNewElements() && !DIExpr->isValid())
       DIExpr = DIExpr->getPoisoned();
+#endif
     VarDecl = getDIBuilder(DebugInst).createGlobalVariableExpression(
         Parent, Name, LinkageName, File, LineNo, Ty, IsLocal, IsDefinition,
         DIExpr, StaticMemberDecl);
@@ -1457,6 +1459,13 @@ SPIRVToLLVMDbgTran::tryTransDIOpDIExpression(const SPIRVExtInst *DebugInst) {
   if (Args.empty())
     return nullptr;
   const SPIRVExtInst *FirstOp = BM->get<SPIRVExtInst>(Args[0]);
+#ifndef SPIRV_HAS_DIOP_DIEXPRESSION
+  if (getOpcodeFromInst(FirstOp) >= SPIRVDebug::AMDExtensions_Begin)
+    llvm_unreachable(
+        "Cannot translate AMD DIOp-based debug info without compatible LLVM");
+  return nullptr;
+#else
+
   // Check if this is a DW_OP-based expression.
   if (getOpcodeFromInst(FirstOp) < SPIRVDebug::DIOp_Begin)
     return nullptr;
@@ -1490,6 +1499,7 @@ SPIRVToLLVMDbgTran::tryTransDIOpDIExpression(const SPIRVExtInst *DebugInst) {
     }
   }
   return DIExpression::get(M->getContext(), bool(), DIOps);
+#endif
 }
 
 MDNode *SPIRVToLLVMDbgTran::transExpression(const SPIRVExtInst *DebugInst) {
@@ -1654,6 +1664,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
   };
   auto PoisonInvalidExpr = [&](DIExpression *Expr, DILocalVariable *Var,
                                Value *Op) {
+#ifdef SPIRV_HAS_DIOP_DIEXPRESSION
     if (!Expr->holdsNewElements())
       return Expr;
     DIExpressionEnv Env{Var, Op, BB->getParent()->getParent()->getDataLayout()};
@@ -1661,6 +1672,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
     // just poison.
     if (Expr->getNewNumLocationOperands() > 1 || !Expr->isValid(Env))
       return Expr->getPoisoned();
+#endif
     return Expr;
   };
   SPIRVWordVec Ops = DebugInst->getArguments();
