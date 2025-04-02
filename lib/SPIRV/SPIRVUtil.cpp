@@ -1341,6 +1341,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_FLOAT));
   if (Ty->isDoubleTy())
     return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_DOUBLE));
+  if (Ty->isBFloatTy())
+    return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_BFLOAT));
   if (auto *VecTy = dyn_cast<FixedVectorType>(Ty)) {
     return SPIR::RefParamType(new SPIR::VectorType(
         transTypeDesc(VecTy->getElementType(), Info), VecTy->getNumElements()));
@@ -2413,8 +2415,13 @@ public:
       addUnsignedArg(0);
       addUnsignedArg(3);
       break;
+    case OpGroupAsyncCopy:
+      addUnsignedArg(3);
+      addUnsignedArg(4);
+      break;
     case OpGroupUMax:
     case OpGroupUMin:
+    case OpGroupBroadcast:
     case OpGroupNonUniformBroadcast:
     case OpGroupNonUniformBallotBitCount:
     case OpGroupNonUniformShuffle:
