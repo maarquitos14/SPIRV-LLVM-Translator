@@ -1,5 +1,5 @@
-; RUN: llvm-spirv %s -to-binary -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: amd-llvm-spirv %s -to-binary -o %t.spv
+; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-LLVM: declare token @llvm.tokenfoo()

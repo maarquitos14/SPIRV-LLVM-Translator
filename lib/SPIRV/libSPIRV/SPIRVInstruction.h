@@ -781,6 +781,18 @@ protected:
       return VersionNumber::SPIRV_1_4;
     return VersionNumber::SPIRV_1_0;
   }
+  SPIRVCapVec getRequiredCapability() const override {
+    if (OpCode == OpDot) {
+      const SPIRVType *OpTy = getValueType(Ops[0]);
+      if (OpTy && OpTy->isTypeVector()) {
+        OpTy = OpTy->getVectorComponentType();
+        if (OpTy && OpTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
+          return getVec(CapabilityBFloat16DotProductKHR);
+        }
+      }
+    }
+    return SPIRVInstruction::getRequiredCapability();
+  }
 };
 
 template <Op OC>
@@ -3995,16 +4007,16 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(internal::CapabilityTensorFloat32RoundingINTEL,
+      return getVec(CapabilityTensorFloat32RoundingINTEL,
                     internal::CapabilityJointMatrixTF32ComponentTypeINTEL);
-    return getVec(internal::CapabilityTensorFloat32RoundingINTEL);
+    return getVec(CapabilityTensorFloat32RoundingINTEL);
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
       this->getModule()->addExtension(ExtensionID::SPV_INTEL_joint_matrix);
-    return ExtensionID::SPV_INTEL_tensor_float32_rounding;
+    return ExtensionID::SPV_INTEL_tensor_float32_conversion;
   }
 
   void validate() const override {
@@ -4068,7 +4080,7 @@ protected:
 };
 
 #define _SPIRV_OP(x)                                                           \
-  typedef SPIRVTensorFloat32RoundingINTELInstBase<internal::Op##x> SPIRV##x;
+  typedef SPIRVTensorFloat32RoundingINTELInstBase<Op##x> SPIRV##x;
 _SPIRV_OP(RoundFToTF32INTEL)
 #undef _SPIRV_OP
 

@@ -641,6 +641,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGALatencyControlINTEL, "FPGALatencyControlINTEL");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
+  add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
+  add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
+  add(CapabilityBFloat16CooperativeMatrixKHR, "BFloat16CooperativeMatrixKHR");
   add(CapabilityArithmeticFenceEXT, "ArithmeticFenceEXT");
   add(CapabilitySubgroup2DBlockIOINTEL, "Subgroup2DBlockIOINTEL");
   add(CapabilitySubgroup2DBlockTransformINTEL, "Subgroup2DBlockTransformINTEL");
@@ -655,7 +658,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityGlobalVariableDecorationsINTEL,
       "GlobalVariableDecorationsINTEL");
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
-  add(internal::CapabilityTensorFloat32RoundingINTEL,
+  add(CapabilityTensorFloat32RoundingINTEL,
       "TensorFloat32RoundingINTEL");
   add(internal::CapabilityJointMatrixWIInstructionsINTEL,
       "JointMatrixWIInstructionsINTEL");
