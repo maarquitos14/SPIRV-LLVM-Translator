@@ -57,20 +57,20 @@
     #       echo 'HAS_CHANGES=true' >> "$GITHUB_OUTPUT"
     #     fi
 
-#     - name: Install dependencies
-#       if: ${{ steps.gather-list-of-changes.outputs.HAS_CHANGES }}
-#       run: |
-#         # clang-tidy requires compile command database in order to be properly
-#         # launched, so, we need to setup llvm package to perform cmake
-#         # configuration step to generate that database
-#         curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-#         echo "deb https://apt.llvm.org/focal/ llvm-toolchain-focal main" | sudo tee -a /etc/apt/sources.list
-#         sudo apt-get update
-#         sudo apt-get install -yqq \
-#             clang-format-${{ env.LLVM_VERSION }} clang-tidy-${{ env.LLVM_VERSION }} \
-#             clang-tools-${{ env.LLVM_VERSION }} llvm-${{ env.LLVM_VERSION }}-dev \
-#             libomp-${{ env.LLVM_VERSION }}-dev libllvmlibc-${{ env.LLVM_VERSION }}-dev \
-#             mlir-${{ env.LLVM_VERSION }}-tools libpolly-${{ env.LLVM_VERSION }}-dev \
+    # - name: Install dependencies
+    #   if: ${{ steps.gather-list-of-changes.outputs.HAS_CHANGES }}
+    #   run: |
+    #     # clang-tidy requires compile command database in order to be properly
+    #     # launched, so, we need to setup llvm package to perform cmake
+    #     # configuration step to generate that database
+    #     curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
+    #     echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy main" | sudo tee -a /etc/apt/sources.list
+    #     sudo apt-get update
+    #     sudo apt-get install -yqq \
+    #         clang-format-${{ env.LLVM_VERSION }} clang-tidy-${{ env.LLVM_VERSION }} \
+    #         clang-tools-${{ env.LLVM_VERSION }} llvm-${{ env.LLVM_VERSION }}-dev \
+    #         libomp-${{ env.LLVM_VERSION }}-dev libllvmlibc-${{ env.LLVM_VERSION }}-dev \
+    #         mlir-${{ env.LLVM_VERSION }}-tools libpolly-${{ env.LLVM_VERSION }}-dev \
 
 #     - name: Generate compile command database
 #       if: ${{ steps.gather-list-of-changes.outputs.HAS_CHANGES }}
