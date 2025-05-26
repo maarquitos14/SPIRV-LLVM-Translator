@@ -391,7 +391,10 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_arbitrary_precision_integers) ||
         BM->getErrorLog().checkError(
-            BitWidth == 8 || BitWidth == 16 || BitWidth == 32 || BitWidth == 64,
+            (BitWidth == 4 &&
+             BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_int4)) ||
+                BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
+                BitWidth == 64,
             SPIRVEC_InvalidBitWidth, std::to_string(BitWidth))) {
       return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
     }
@@ -2175,14 +2178,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (static_cast<uint32_t>(Builtin) >= internal::BuiltInSubDeviceIDINTEL &&
         static_cast<uint32_t>(Builtin) <=
             internal::BuiltInGlobalHWThreadIDINTEL) {
-      if (!BM->isAllowedToUseExtension(
-              ExtensionID::SPV_INTEL_hw_thread_queries)) {
-        std::string ErrorStr = "Intel HW thread queries must be enabled by "
-                               "SPV_INTEL_hw_thread_queries extension.\n"
-                               "LLVM value that is being translated:\n";
-        getErrorLog().checkError(false, SPIRVEC_InvalidModule, V, ErrorStr);
-      }
-      BM->addExtension(ExtensionID::SPV_INTEL_hw_thread_queries);
+      std::string ErrorStr = "SPV_INTEL_hw_thread_queries\n"
+                             "Please report to "
+                             "https://github.com/intel/llvm in case if you see "
+                             "this error.\nRef LLVM Value:";
+      getErrorLog().checkError(false, SPIRVEC_DeprecatedExtension, V, ErrorStr);
     }
 
     BVar->setBuiltin(Builtin);
@@ -3170,10 +3170,12 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
           if (FMF.allowContract()) {
             M |= FPFastMathModeAllowContractFastINTELMask;
             BM->addCapability(CapabilityFPFastMathModeINTEL);
+            BM->addExtension(ExtensionID::SPV_INTEL_fp_fast_math_mode);
           }
           if (FMF.allowReassoc()) {
             M |= FPFastMathModeAllowReassocINTELMask;
             BM->addCapability(CapabilityFPFastMathModeINTEL);
+            BM->addExtension(ExtensionID::SPV_INTEL_fp_fast_math_mode);
           }
         }
       }
@@ -5594,7 +5596,7 @@ SPIRVValue *LLVMToSPIRVBase::transAsmINTEL(InlineAsm *IA) {
       BM->getOrAddAsmTargetINTEL(TripleStr.str()));
   auto *SIA = BM->addAsmINTEL(
       static_cast<SPIRVTypeFunction *>(transType(IA->getFunctionType())),
-      AsmTarget, IA->getAsmString(), IA->getConstraintString());
+      AsmTarget, IA->getAsmString().str(), IA->getConstraintString().str());
   if (IA->hasSideEffects())
     SIA->addDecorate(DecorationSideEffectsINTEL);
   return SIA;
