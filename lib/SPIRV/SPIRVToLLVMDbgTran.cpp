@@ -1663,7 +1663,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
     return transDebugInst<DIExpression>(BM->get<SPIRVExtInst>(Id));
   };
   auto PoisonInvalidExpr = [&](DIExpression *Expr, DILocalVariable *Var,
-                               Value *Op) {
+                               const Value *Op) {
 #ifdef SPIRV_HAS_DIOP_DIEXPRESSION
     if (!Expr->holdsNewElements())
       return Expr;
