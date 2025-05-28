@@ -294,7 +294,7 @@ CallInst *SPIRVToOCL20Base::mutateCommonAtomicArguments(CallInst *CI, Op OC) {
           : SPIRAS_Generic;
       if (TypedPtrTy->getAddressSpace() != AS) {
         Type *ElementTy = TypedPtrTy->getElementType();
-        Type *FixedPtr = PointerType::get(ElementTy, AS);
+        Type *FixedPtr = PointerType::get(CI->getContext(), AS);
         PtrArg = Builder.CreateAddrSpaceCast(PtrArg, FixedPtr,
                                              PtrArg->getName() + ".as");
         PtrArgTy = TypedPointerType::get(ElementTy, AS);
@@ -343,7 +343,8 @@ void SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
                     M->getTargetTriple().getVendor() == Triple::VendorType::AMD
                       ? mapSPIRVAddrSpaceToAMDGPU(StorageClassGeneric)
                       : SPIRAS_Generic;
-                Type *PtrTyAS = PointerType::get(PExpected->getType(), AddrSpc);
+                Type *PtrTyAS =
+                    PointerType::get(Expected->getContext(), AddrSpc);
                 Value *V = Builder.CreateAddrSpaceCast(
                     PExpected, PtrTyAS, PExpected->getName() + ".as");
                 return std::make_pair(V, TypedPointerType::get(MemTy, AddrSpc));
