@@ -1,4 +1,4 @@
-name: Compiler CI PSDB trigger on amd-staging branch
+name: Compiler CI PSDB trigger on spirv-llvm-translator amd-staging branch
 
 # Controls when the workflow will run
 on:
