@@ -2736,13 +2736,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case SPIRVEIS_OpenCL_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
-      if (!M->IsNewDbgInfoFormat) {
-        return mapValue(
-            BV, cast<Instruction *>(DbgTran->transDebugIntrinsic(ExtInst, BB)));
-      } else {
-        DbgTran->transDebugIntrinsic(ExtInst, BB);
-        return mapValue(BV, nullptr);
-      }
+      DbgTran->transDebugIntrinsic(ExtInst, BB);
+      return mapValue(BV, nullptr);
     default:
       llvm_unreachable("Unknown extended instruction set!");
     }
@@ -4826,12 +4821,6 @@ bool SPIRVToLLVM::transMetadata() {
     // Decoration metadata is only enabled in SPIR-V friendly mode
     if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR)
       transFunctionDecorationsToMetadata(BF, F);
-
-    if (BF->hasDecorate(internal::DecorationCallableFunctionINTEL))
-      F->addFnAttr(kVCMetadata::VCCallable);
-    if (isKernel(BF) &&
-        BF->getExecutionMode(internal::ExecutionModeFastCompositeKernelINTEL))
-      F->addFnAttr(kVCMetadata::VCFCEntry);
 
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL &&
         F->getCallingConv() != CallingConv::AMDGPU_KERNEL)
