@@ -4825,6 +4825,7 @@ bool SPIRVToLLVM::transMetadata() {
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL &&
         F->getCallingConv() != CallingConv::AMDGPU_KERNEL)
       continue;
+
     if (F->getCallingConv() == CallingConv::AMDGPU_KERNEL) {
       F->addFnAttr("uniform-work-group-size", "true");
       F->addFnAttr(Attribute::Convergent);
