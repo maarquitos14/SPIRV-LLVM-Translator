@@ -1108,8 +1108,8 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
            Dst->getPointerAddressSpace()) &&
           M->getTargetTriple().getVendor() == Triple::VendorType::AMD)
         CO = Instruction::AddrSpaceCast;
-      else
-        return Src;
+    } else if (Src->getType() == Dst) { // Spuriously inserted BC
+      return Src;
     } else {
       // OpBitcast need to be handled as a special-case when the source is a
       // pointer and the destination is not a pointer, and where the source is not
@@ -2736,10 +2736,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case SPIRVEIS_OpenCL_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
-      {
-        DbgTran->transDebugIntrinsic(ExtInst, BB);
-        return mapValue(BV, nullptr);
-      }
+      DbgTran->transDebugIntrinsic(ExtInst, BB);
+      return mapValue(BV, nullptr);
     default:
       llvm_unreachable("Unknown extended instruction set!");
     }
@@ -3043,7 +3041,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       auto *BI = static_cast<SPIRVInstruction *>(BV);
       Value *Inst = nullptr;
-      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
+      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion() ||
+          BI->getType()->isTypeCooperativeMatrixKHR())
         Inst = transSPIRVBuiltinFromInst(BI, BB);
       else
         Inst = transConvertInst(BV, F, BB);
@@ -3498,6 +3497,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
     F->setName("old_" + Name);
     auto *NewFn = Function::Create(NewFT, F->getLinkage(), F->getAddressSpace(),
                                    Name, F->getParent());
+    F->replaceAllUsesWith(NewFn);
     mapFunction(BF, NewFn);
     return NewFn;
   }
@@ -4822,15 +4822,10 @@ bool SPIRVToLLVM::transMetadata() {
     if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR)
       transFunctionDecorationsToMetadata(BF, F);
 
-    if (BF->hasDecorate(internal::DecorationCallableFunctionINTEL))
-      F->addFnAttr(kVCMetadata::VCCallable);
-    if (isKernel(BF) &&
-        BF->getExecutionMode(internal::ExecutionModeFastCompositeKernelINTEL))
-      F->addFnAttr(kVCMetadata::VCFCEntry);
-
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL &&
         F->getCallingConv() != CallingConv::AMDGPU_KERNEL)
       continue;
+
     if (F->getCallingConv() == CallingConv::AMDGPU_KERNEL) {
       F->addFnAttr("uniform-work-group-size", "true");
       F->addFnAttr(Attribute::Convergent);
