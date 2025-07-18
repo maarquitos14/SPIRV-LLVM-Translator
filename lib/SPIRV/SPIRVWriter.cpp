@@ -1482,6 +1482,18 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   if (auto *ConstUE = dyn_cast<ConstantExpr>(V)) {
     if (auto *GEP = dyn_cast<GEPOperator>(ConstUE)) {
       auto *TransPointerOperand = transValue(GEP->getPointerOperand(), nullptr);
+      // Determine the expected pointer type from the GEP source element type.
+      Type *GepSourceElemTy = GEP->getSourceElementType();
+      SPIRVType *ExpectedPtrTy =
+          transPointerType(GepSourceElemTy, GEP->getPointerAddressSpace());
+
+      // Ensure the base pointer's type matches the GEP's effective source
+      // element type.
+      if (TransPointerOperand->getType() != ExpectedPtrTy) {
+        TransPointerOperand = BM->addUnaryInst(OpBitcast, ExpectedPtrTy,
+                                               TransPointerOperand, nullptr);
+      }
+
       std::vector<SPIRVWord> Ops = {TransPointerOperand->getId()};
       for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
         Ops.push_back(transValue(GEP->getOperand(I + 1), nullptr)->getId());
@@ -4021,6 +4033,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::masked_gather:
   case Intrinsic::masked_scatter:
   case Intrinsic::modf:
+  case Intrinsic::fake_use:
     return true;
   default:
     // Unknown intrinsics' declarations should always be translated
@@ -5009,6 +5022,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::trap:
   case Intrinsic::ubsantrap:
   case Intrinsic::debugtrap:
+  // Just ignore llvm.fake.use intrinsic, as it has no translation in SPIRV.
+  case Intrinsic::fake_use:
   // llvm.instrprof.* intrinsics are not supported
   case Intrinsic::instrprof_increment:
   case Intrinsic::instrprof_increment_step:
