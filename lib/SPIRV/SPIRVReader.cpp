@@ -1921,11 +1921,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStart->getSize();
-    ConstantInt *S = nullptr;
-    if (Size)
-      S = Builder.getInt64(Size);
     Value *Var = transValue(LTStart->getObject(), F, BB);
-    CallInst *Start = Builder.CreateLifetimeStart(Var, S);
+    CallInst *Start = Builder.CreateLifetimeStart(Var);
     return mapValue(BV, Start);
   }
 
@@ -1933,14 +1930,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVLifetimeStop *LTStop = static_cast<SPIRVLifetimeStop *>(BV);
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStop->getSize();
-    ConstantInt *S = nullptr;
-    if (Size)
-      S = Builder.getInt64(Size);
     auto *Var = transValue(LTStop->getObject(), F, BB);
     for (const auto &I : Var->users())
       if (auto *II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))
-        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(1), S));
-    return mapValue(BV, Builder.CreateLifetimeEnd(Var, S));
+        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(1)));
+    return mapValue(BV, Builder.CreateLifetimeEnd(Var));
   }
 
   case OpStore: {
