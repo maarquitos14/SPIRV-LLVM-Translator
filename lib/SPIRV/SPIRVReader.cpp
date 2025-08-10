@@ -1103,10 +1103,13 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     break;
   case OpBitcast:
     if (Src->getType()->isPointerTy() && Dst->isPointerTy()) {
-      if ((Src->getType()->getPointerAddressSpace() !=
-           Dst->getPointerAddressSpace()) &&
-          M->getTargetTriple().getVendor() == Triple::VendorType::AMD)
-        CO = Instruction::AddrSpaceCast;
+      if (M->getTargetTriple().getVendor() == Triple::VendorType::AMD) {
+        if (Src->getType()->getPointerAddressSpace() !=
+            Dst->getPointerAddressSpace())
+          CO = Instruction::AddrSpaceCast;
+        else
+          return Src; // Spuriously inserted pointer BC.
+      }
     } else if (Src->getType() == Dst) { // Spuriously inserted BC
       return Src;
     } else {
