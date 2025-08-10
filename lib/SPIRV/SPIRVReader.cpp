@@ -4087,7 +4087,7 @@ bool SPIRVToLLVM::translate() {
     return true;
   // TODO: this is temporary hardcoding, but will ultimately get handled in the
   // FE.
-  M->addModuleFlag(llvm::Module::Error, "amdhsa_code_object_version", 500);
+  M->addModuleFlag(llvm::Module::Error, "amdhsa_code_object_version", 600);
   M->addModuleFlag(llvm::Module::Error, "amdgpu_printf_kind",
                    llvm::MDString::get(M->getContext(), "hostcall"));
   StringRef Name = "__oclc_ABI_version";
