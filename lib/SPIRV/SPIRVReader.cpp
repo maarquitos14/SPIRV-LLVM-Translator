@@ -3548,10 +3548,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
     }
   }
 
-  // TODO: this is temporarily disabled as it breaks some more complex code
-  //       patterns that are otherwise correctly(-ish) handled
-  if (M->getTargetTriple().getVendor() != Triple::VendorType::AMD)
-    validatePhiPredecessors(F);
+  validatePhiPredecessors(F);
   transLLVMLoopMetadata(F);
 
   return F;
