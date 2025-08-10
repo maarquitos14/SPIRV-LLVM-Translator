@@ -4100,7 +4100,7 @@ bool SPIRVToLLVM::translate() {
     return true;
 
   auto *Type = llvm::IntegerType::getIntNTy(M->getContext(), 32);
-  llvm::Constant *COV = llvm::ConstantInt::get(Type, 500);
+  llvm::Constant *COV = llvm::ConstantInt::get(Type, 600);
 
   auto *GV = new llvm::GlobalVariable(
       *M, Type, true, llvm::GlobalValue::WeakODRLinkage, COV, Name,
