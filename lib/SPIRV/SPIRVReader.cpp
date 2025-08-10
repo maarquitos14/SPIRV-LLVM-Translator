@@ -5470,7 +5470,10 @@ static Instruction *transLLVMFromExtInst(SPIRVToLLVM &Reader, OCLExtOpKind Op,
       break;
     //   Log1p = 40,
     //   Logb = 41,
-    //   Mad = 42,
+    case OpenCLLIB::Mad:
+      ID = Intrinsic::fmuladd;
+      Formals = ArrayRef(RetTy);
+      break;
     //   Maxmag = 43,
     //   Minmag = 44,
     //   Modf = 45,
