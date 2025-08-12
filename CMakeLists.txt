@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 if(NOT DEFINED BASE_LLVM_VERSION)
-  set (BASE_LLVM_VERSION 21.0.0)
+  set (BASE_LLVM_VERSION 22.0.0)
 endif(NOT DEFINED BASE_LLVM_VERSION)
 set(LLVM_SPIRV_VERSION ${BASE_LLVM_VERSION}.0)
 
@@ -113,9 +113,9 @@ endif()
 
 is_llvm_target_library("SPIRV" spirv_present_result INCLUDED_TARGETS)
 if(spirv_present_result)
-  message(STATUS "Found SPIR-V Backend")
-  set(SPIRV_BACKEND_FOUND TRUE)
-  add_compile_definitions(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
+  message(STATUS "Found SPIR-V Backend, but it is currently disabled for AMD's fork.")
+  # set(SPIRV_BACKEND_FOUND TRUE)
+  # add_compile_definitions(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
 endif()
 
 set(LLVM_SPIRV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)

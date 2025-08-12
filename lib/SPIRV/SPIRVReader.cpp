@@ -1103,10 +1103,13 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     break;
   case OpBitcast:
     if (Src->getType()->isPointerTy() && Dst->isPointerTy()) {
-      if ((Src->getType()->getPointerAddressSpace() !=
-           Dst->getPointerAddressSpace()) &&
-          M->getTargetTriple().getVendor() == Triple::VendorType::AMD)
-        CO = Instruction::AddrSpaceCast;
+      if (M->getTargetTriple().getVendor() == Triple::VendorType::AMD) {
+        if (Src->getType()->getPointerAddressSpace() !=
+            Dst->getPointerAddressSpace())
+          CO = Instruction::AddrSpaceCast;
+        else
+          return Src; // Spuriously inserted pointer BC.
+      }
     } else if (Src->getType() == Dst) { // Spuriously inserted BC
       return Src;
     } else {
@@ -1921,7 +1924,15 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStart->getSize();
-    Value *Var = transValue(LTStart->getObject(), F, BB);
+    auto *Var = transValue(LTStart->getObject(), F, BB);
+    Var = Var->stripPointerCasts();
+    if (Size == 0) {
+      auto *Alloca = cast<AllocaInst>(Var);
+      if (Alloca->getAllocatedType()->isSized())
+        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
+      else
+        Size = static_cast<SPIRVWord>(-1);
+    }
     CallInst *Start = Builder.CreateLifetimeStart(Var);
     return mapValue(BV, Start);
   }
@@ -1931,9 +1942,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStop->getSize();
     auto *Var = transValue(LTStop->getObject(), F, BB);
+    Var = Var->stripPointerCasts();
+    if (Size == 0) {
+      auto *Alloca = cast<AllocaInst>(Var);
+      if (Alloca->getAllocatedType()->isSized())
+        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
+      else
+        Size = static_cast<SPIRVWord>(-1);
+    }
     for (const auto &I : Var->users())
       if (auto *II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))
-        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(1)));
+        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(0)));
     return mapValue(BV, Builder.CreateLifetimeEnd(Var));
   }
 
@@ -3532,10 +3551,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
     }
   }
 
-  // TODO: this is temporarily disabled as it breaks some more complex code
-  //       patterns that are otherwise correctly(-ish) handled
-  if (M->getTargetTriple().getVendor() != Triple::VendorType::AMD)
-    validatePhiPredecessors(F);
+  validatePhiPredecessors(F);
   transLLVMLoopMetadata(F);
 
   return F;
@@ -4074,7 +4090,7 @@ bool SPIRVToLLVM::translate() {
     return true;
   // TODO: this is temporary hardcoding, but will ultimately get handled in the
   // FE.
-  M->addModuleFlag(llvm::Module::Error, "amdhsa_code_object_version", 500);
+  M->addModuleFlag(llvm::Module::Error, "amdhsa_code_object_version", 600);
   M->addModuleFlag(llvm::Module::Error, "amdgpu_printf_kind",
                    llvm::MDString::get(M->getContext(), "hostcall"));
   StringRef Name = "__oclc_ABI_version";
@@ -4084,7 +4100,7 @@ bool SPIRVToLLVM::translate() {
     return true;
 
   auto *Type = llvm::IntegerType::getIntNTy(M->getContext(), 32);
-  llvm::Constant *COV = llvm::ConstantInt::get(Type, 500);
+  llvm::Constant *COV = llvm::ConstantInt::get(Type, 600);
 
   auto *GV = new llvm::GlobalVariable(
       *M, Type, true, llvm::GlobalValue::WeakODRLinkage, COV, Name,
@@ -5457,7 +5473,10 @@ static Instruction *transLLVMFromExtInst(SPIRVToLLVM &Reader, OCLExtOpKind Op,
       break;
     //   Log1p = 40,
     //   Logb = 41,
-    //   Mad = 42,
+    case OpenCLLIB::Mad:
+      ID = Intrinsic::fmuladd;
+      Formals = ArrayRef(RetTy);
+      break;
     //   Maxmag = 43,
     //   Minmag = 44,
     //   Modf = 45,
