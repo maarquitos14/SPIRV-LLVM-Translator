@@ -1923,33 +1923,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpLifetimeStart: {
 SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     IRBuilder<> Builder(BB);
-    SPIRVWord Size = LTStart->getSize();
     auto *Var = transValue(LTStart->getObject(), F, BB);
     Var = Var->stripPointerCasts();
-    if (Size == 0) {
-      auto *Alloca = cast<AllocaInst>(Var);
-      if (Alloca->getAllocatedType()->isSized())
-        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
-      else
-        Size = static_cast<SPIRVWord>(-1);
-    }
     CallInst *Start = Builder.CreateLifetimeStart(Var);
     return mapValue(BV, Start);
   }
-
   case OpLifetimeStop: {
     SPIRVLifetimeStop *LTStop = static_cast<SPIRVLifetimeStop *>(BV);
     IRBuilder<> Builder(BB);
-    SPIRVWord Size = LTStop->getSize();
     auto *Var = transValue(LTStop->getObject(), F, BB);
     Var = Var->stripPointerCasts();
-    if (Size == 0) {
-      auto *Alloca = cast<AllocaInst>(Var);
-      if (Alloca->getAllocatedType()->isSized())
-        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
-      else
-        Size = static_cast<SPIRVWord>(-1);
-    }
     for (const auto &I : Var->users())
       if (auto *II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))
         return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(0)));

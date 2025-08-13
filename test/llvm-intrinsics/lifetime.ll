@@ -23,8 +23,8 @@
 ; CHECK-SPIRV: LifetimeStop [[#Tmp]] 0
 
 ; CHECK-SPIRV: Function [[#]] [[#SizedF:]]
-; CHECK-SPIRV: LifetimeStart [[#Tmp:]] 0
-; CHECK-SPIRV: LifetimeStop [[#Tmp]] 0
+; CHECK-SPIRV: LifetimeStart [[#Tmp:]] 1
+; CHECK-SPIRV: LifetimeStop [[#Tmp]] 1
 
 ; CHECK-SPIRV: Function [[#]] [[#GenericF:]]
 ; CHECK-SPIRV: Variable [[#PrivatePtrTy]] [[#Var:]] 7
