@@ -840,7 +840,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     // Create index group metadata nodes - one per each of the array
     // variables. Mark each GEP accessing a particular array variable
     // into a corresponding index group
-    std::map<unsigned, SmallSet<MDNode *, 4>> SafelenIdxGroupMap;
+    std::map<unsigned, SmallPtrSet<MDNode *, 4>> SafelenIdxGroupMap;
     // Whenever a kernel closure field access is pointed to instead of
     // an array/pointer variable, ensure that all GEPs to that memory
     // share the same index group by hashing the newly added index groups.
