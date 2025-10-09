@@ -1,8 +1,8 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: amd-llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: amd-llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
@@ -36,7 +36,7 @@ target triple = "spir64"
 ; CHECK-SPIRV-DAG: IEqual [[#]] [[#R:]] [[#A]] [[#B]]
 ; CHECK-SPIRV-DAG: ReturnValue [[#R]]
 ; CHECK-SPIRV-DAG: FunctionEnd
-; CHECK-LLVM-DAG: icmp eq 
+; CHECK-LLVM-DAG: icmp eq
 
 define i1 @test_eq(i32 %a, i32 %b) {
   %r = icmp eq i32 %a, %b
