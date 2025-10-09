@@ -2399,9 +2399,9 @@ SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     } else {
       auto *CT = cast<Constant>(Base);
       if (auto CE = dyn_cast<ConstantExpr>(CT))
-        if (CE->isCast() && CE->getOpcode() == Instruction::AddrSpaceCast)
-          if (auto GV = dyn_cast<GlobalValue>(CE->getOperand(0)))
-            BaseTy = GV->getValueType();
+        if (auto GV =
+              dyn_cast<GlobalValue>(CE->getOperand(0)->stripPointerCasts()))
+          BaseTy = GV->getValueType();
       V = ConstantExpr::getGetElementPtr(BaseTy, CT, Index, IsInbound);
     }
     return mapValue(BV, V);
