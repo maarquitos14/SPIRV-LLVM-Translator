@@ -1,15 +1,15 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -spirv-text -o %t.spt
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED-PTR
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
 
-; RUN: amd-llvm-spirv %t.bc -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_untyped_pointers
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_untyped_pointers
 ; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED-PTR
-; RUN: amd-llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
 
 ; CHECK-SPIRV: Decorate [[#NonConstMemset:]] LinkageAttributes "spirv.llvm_memset_p3_i32"
 ; CHECK-SPIRV: TypeInt [[Int8:[0-9]+]] 8 0

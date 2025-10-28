@@ -1,15 +1,15 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv %t.spv -to-text -o %t.spt
+; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: amd-llvm-spirv -r %t.spv -o %t.spv.bc
+; RUN: llvm-spirv -r %t.spv -o %t.spv.bc
 ; RUN: llvm-dis < %t.spv.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; Verify that we have valid SPV and the same output LLVM IR when using untyped pointers.
-; RUN: amd-llvm-spirv %t.bc --spirv-ext=+SPV_KHR_untyped_pointers -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_untyped_pointers -o %t.spv
 ; R/UN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r %t.spv -o %t.spv.bc
+; RUN: llvm-spirv -r %t.spv -o %t.spv.bc
 ; RUN: llvm-dis < %t.spv.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: Name [[#SimpleF:]] "lifetime_simple"

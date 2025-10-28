@@ -1,10 +1,10 @@
 ; REQUIRES: spirv-dis
 ; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-dis --raw-id %t.spv -o %t.spvasm
 ; RUN: FileCheck < %t.spvasm --check-prefix CHECK-SPIRV %s
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck --check-prefix CHECK-LLVM %s
 
 target triple = "spir64-unknown-unknown"
