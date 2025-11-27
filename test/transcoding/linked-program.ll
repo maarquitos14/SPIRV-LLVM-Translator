@@ -1,10 +1,9 @@
 ; REQUIRES: spirv-link
 ;
-; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: spirv-link %t.spv -o %t.linked.spv
-; RUN: amd-llvm-spirv -r %t.linked.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.linked.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s
 ;
 ; This checks that SPIR-V programs with global variables are still consumable
