@@ -1,11 +1,10 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
-; RUN: amd-llvm-spirv %t.spv -to-text -o %t.spt
+; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefixes=CHECK-LLVM
-; RUN: amd-llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefixes=CHECK-SPV-IR
 
 ; Check OpenCL built-in nan translation.

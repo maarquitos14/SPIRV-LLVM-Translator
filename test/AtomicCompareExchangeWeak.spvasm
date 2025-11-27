@@ -3,7 +3,7 @@
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r --spirv-target-env=CL2.0 --spirv-target-env="SPV-IR" -o - %t.spv | llvm-dis | FileCheck %s
+; RUN: llvm-spirv -r --spirv-target-env=CL2.0 --spirv-target-env="SPV-IR" -o - %t.spv | llvm-dis | FileCheck %s
 
                OpCapability Addresses
                OpCapability Linkage

@@ -1,17 +1,17 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; Verify that even though we use the fract instruction with untyped pointers enabled,
 ; the SPV binary is valid and we get exactly the same output IR after the reverse translation.
-; RUN: amd-llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
 ; TODO: enable back once spirv-tools are updated
 ; R/UN: spirv-val %t.spv
-; RUN: amd-llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 source_filename = "math_builtin_float_half.cpp"

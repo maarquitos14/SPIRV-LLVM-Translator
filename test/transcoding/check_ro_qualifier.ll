@@ -1,12 +1,11 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: amd-llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-LLVM
-; RUN: amd-llvm-spirv %t.rev.bc -o %t.back.spv
-; RUN: amd-llvm-spirv %t.back.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.rev.bc -o %t.back.spv
+; RUN: llvm-spirv %t.back.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
 ; CHECK-LLVM: define spir_kernel void @sample_kernel(target("spirv.Image", void, 1, 0, 1, 0, 0, 0, 0)
 ; CHECK-LLVM-SAME: !kernel_arg_access_qual [[AQ:![0-9]+]]

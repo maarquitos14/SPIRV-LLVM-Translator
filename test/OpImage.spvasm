@@ -2,8 +2,8 @@
 
 ; RUN: spirv-as %s --target-env spv1.0 -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: amd-llvm-spirv -to-text -o - %t.spv | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: amd-llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -to-text -o - %t.spv | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
                OpCapability Addresses
