@@ -2137,8 +2137,6 @@ protected:
       break;
     case OpTypeArray:
     case OpTypeStruct:
-    case internal::OpTypeJointMatrixINTEL:
-    case internal::OpTypeJointMatrixINTELv2:
     case OpTypeCooperativeMatrixKHR:
       break;
     default:
@@ -2398,8 +2396,7 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+    assert(getValueType(VectorId)->isTypeVector());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2436,8 +2433,7 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+    assert(getValueType(VectorId)->isTypeVector());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2498,6 +2494,19 @@ public:
     return getValues(Operands);
   }
 
+  SPIRVCapVec getRequiredCapability() const override {
+    if (isDeviceBarrier()) {
+      return getVec(internal::CapabilityDeviceBarrierINTEL);
+    }
+    return SPIRVInstruction::getRequiredCapability();
+  }
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (isDeviceBarrier()) {
+      return ExtensionID::SPV_INTEL_device_barrier;
+    }
+    return std::nullopt;
+  }
+
 protected:
   _SPIRV_DEF_ENCDEC3(ExecScope, MemScope, MemSema)
   void validate() const override {
@@ -2505,6 +2514,20 @@ protected:
     assert(WordCount == 4);
     SPIRVInstruction::validate();
   }
+
+  bool isDeviceBarrier() const {
+    if (!getModule()->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_device_barrier))
+      return false;
+    SPIRVValue *ESV = getValue(ExecScope);
+    if (ESV && ESV->getOpCode() == OpConstant) {
+      if (static_cast<SPIRVConstant *>(ESV)->getZExtIntValue() != ScopeDevice) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   SPIRVId ExecScope;
   SPIRVId MemScope = SPIRVID_INVALID;
   SPIRVId MemSema = SPIRVID_INVALID;
@@ -3615,8 +3638,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(CapabilityBFloat16ConversionINTEL,
-                    internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
+      return getVec(
+          CapabilityBFloat16ConversionINTEL,
+          internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL);
     return getVec(CapabilityBFloat16ConversionINTEL);
   }
 
@@ -3710,26 +3734,6 @@ protected:
     return ExtensionID::SPV_INTEL_joint_matrix;
   }
 };
-
-class SPIRVJointMatrixINTELInst : public SPIRVJointMatrixINTELInstBase {
-  SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityJointMatrixINTEL);
-  }
-};
-
-#define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVJointMatrixINTELInst, internal::Op##x##INTEL, \
-                            __VA_ARGS__>                                       \
-      SPIRV##x##INTEL;
-_SPIRV_OP(JointMatrixLoad, true, 6, true)
-_SPIRV_OP(JointMatrixStore, false, 5, true)
-_SPIRV_OP(JointMatrixMad, true, 6, true)
-_SPIRV_OP(JointMatrixSUMad, true, 6, true)
-_SPIRV_OP(JointMatrixUSMad, true, 6, true)
-_SPIRV_OP(JointMatrixUUMad, true, 6, true)
-// TODO: move to SPIRVJointMatrixINTELWorkItemInst
-_SPIRV_OP(JointMatrixWorkItemLength, true, 4)
-#undef _SPIRV_OP
 
 class SPIRVJointMatrixINTELWorkItemInst : public SPIRVJointMatrixINTELInstBase {
 protected:
@@ -4042,8 +4046,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(CapabilityTensorFloat32RoundingINTEL,
-                    internal::CapabilityJointMatrixTF32ComponentTypeINTEL);
+      return getVec(
+          CapabilityTensorFloat32RoundingINTEL,
+          internal::CapabilityCooperativeMatrixTF32ComponentTypeINTEL);
     return getVec(CapabilityTensorFloat32RoundingINTEL);
   }
 

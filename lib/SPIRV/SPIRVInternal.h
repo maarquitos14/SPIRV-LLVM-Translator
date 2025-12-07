@@ -318,7 +318,6 @@ const static char ConstantSampler[] = "ConstantSampler";
 const static char PipeStorage[] = "PipeStorage";
 const static char ConstantPipeStorage[] = "ConstantPipeStorage";
 const static char VmeImageINTEL[] = "VmeImageINTEL";
-const static char JointMatrixINTEL[] = "JointMatrixINTEL";
 const static char CooperativeMatrixKHR[] = "CooperativeMatrixKHR";
 const static char BufferSurfaceINTEL[] = "BufferSurfaceINTEL";
 } // namespace kSPIRVTypeName
@@ -973,7 +972,6 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
   _SPIRV_OP(BufferSurfaceINTEL)
   _SPIRV_OP(CooperativeMatrixKHR)
 #undef _SPIRV_OP
-  add("JointMatrixINTEL", internal::OpTypeJointMatrixINTEL);
   add("TaskSequenceINTEL", internal::OpTypeTaskSequenceINTEL);
 }
 
@@ -1003,7 +1001,7 @@ CallInst *setAttrByCalledFunc(CallInst *Call);
 bool isSPIRVBuiltinVariable(GlobalVariable *GV, SPIRVBuiltinVariableKind *Kind);
 // Transform builtin variable from GlobalVariable to builtin call.
 // e.g.
-// - GlobalInvolcationId[x] -> _Z33__spirv_BuiltInGlobalInvocationIdi(x)
+// - GlobalInvocationId[x] -> _Z33__spirv_BuiltInGlobalInvocationIdi(x)
 // - WorkDim -> _Z22__spirv_BuiltInWorkDimv()
 bool lowerBuiltinVariableToCall(GlobalVariable *GV,
                                 SPIRVBuiltinVariableKind Kind);
