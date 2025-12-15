@@ -3081,6 +3081,10 @@ SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     return mapValue(
         BV, Builder.CreateIntrinsic(Intrinsic::arithmetic_fence, RetTy, Val));
   }
+  case OpFmaKHR: {
+    auto *BC = static_cast<SPIRVFmaKHR *>(BV);
+    return mapValue(BV, transBuiltinFromInst("fma", BC, BB));
+  }
   case internal::OpMaskedGatherINTEL: {
     IRBuilder<> Builder(BB);
     auto *Inst = static_cast<SPIRVMaskedGatherINTELInst *>(BV);
@@ -4023,6 +4027,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpUDotAccSatKHR:
   case OpSUDotAccSatKHR:
   case OpReadClockKHR:
+  case OpFmaKHR:
   case OpCooperativeMatrixLoadKHR:
   case internal::OpCooperativeMatrixLoadCheckedINTEL:
   case internal::OpCooperativeMatrixLoadOffsetINTEL:
