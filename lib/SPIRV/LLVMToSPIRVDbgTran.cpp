@@ -587,8 +587,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgCompileUnit(const DICompileUnit *CU) {
   if (isNonSemanticDebugInfo())
     generateBuildIdentifierAndStoragePath(CU);
 
-  auto DwarfLang =
-      static_cast<llvm::dwarf::SourceLanguage>(CU->getSourceLanguage());
+  auto DwarfLang = static_cast<llvm::dwarf::SourceLanguage>(
+      CU->getSourceLanguage().getUnversionedName());
   Ops[LanguageIdx] =
       BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200
           ? convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(DwarfLang)
@@ -1286,17 +1286,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
     Ops[FunctionIdIdx] = getDebugInfoNoneId();
     for (const llvm::Function &F : M->functions()) {
       if (Func->describes(&F)) {
-        // Function definition of spir_kernel can have no "spir_kernel" calling
-        // convention because SPIRVRegularizeLLVMBase::addKernelEntryPoint pass
-        // could have turned it to spir_func. The "true" entry point is a
-        // wrapper kernel function, which can be found further in the module.
-        if (FuncDef) {
-          if (F.getCallingConv() == CallingConv::SPIR_KERNEL) {
-            IsEntryPointKernel = true;
-            break;
-          }
+        if (FuncDef)
           continue;
-        }
 
         SPIRVValue *SPIRVFunc = SPIRVWriter->getTranslatedValue(&F);
         assert(SPIRVFunc && "All function must be already translated");
@@ -1305,7 +1296,6 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
         if (!isNonSemanticDebugInfo())
           break;
 
-        // Most likely unreachable because of Regularise LLVM pass
         if (F.getCallingConv() == CallingConv::SPIR_KERNEL) {
           IsEntryPointKernel = true;
           break;
@@ -1320,13 +1310,14 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
     if (DISubprogram *FuncDecl = Func->getDeclaration())
       Ops.push_back(transDbgEntry(FuncDecl)->getId());
     else {
-      Ops.push_back(getDebugInfoNoneId());
       if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
         // Translate targetFuncName mostly for Fortran trampoline function if it
         // is the case
         StringRef TargetFunc = Func->getTargetFuncName();
-        if (!TargetFunc.empty())
+        if (!TargetFunc.empty()) {
+          Ops.push_back(getDebugInfoNoneId());
           Ops.push_back(BM->getString(TargetFunc.str())->getId());
+        }
       }
     }
 
