@@ -189,7 +189,7 @@ static void addBufferLocationMetadata(
       ValueVec.push_back(ForeachFnArg(Arg));
     } else {
       llvm::Metadata *DefaultNode = ConstantAsMetadata::get(
-          ConstantInt::get(Type::getInt32Ty(*Context), -1));
+          ConstantInt::get(Type::getInt32Ty(*Context), -1, true));
       ValueVec.push_back(DefaultNode);
     }
   });
@@ -3529,6 +3529,27 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
     return Loc->second;
 
   auto IsKernel = isKernel(BF);
+
+  // Backward compatibility: need to correctly translate entry point wrapper
+  // produced by an older writer.
+  if (IsKernel) {
+    // search for a previous function with the same name
+    // upgrade it to a kernel and drop this if it's found
+    for (auto &I : FuncMap) {
+      const auto &BFName = I.getFirst()->getName();
+      if (BF->getName() == BFName) {
+        auto *F = I.getSecond();
+        F->setCallingConv(CallingConv::SPIR_KERNEL);
+        F->setLinkage(GlobalValue::ExternalLinkage);
+        F->setDSOLocal(false);
+        F = cast<Function>(mapValue(BF, F));
+        mapFunction(BF, F);
+        transFunctionAttrs(BF, F);
+        return F;
+      }
+    }
+  }
+
   auto Linkage = IsKernel ? GlobalValue::ExternalLinkage : transLinkageType(BF);
   FunctionType *FT = cast<FunctionType>(transType(BF->getFunctionType()));
   std::string FuncName = BF->getName();
