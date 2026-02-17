@@ -159,7 +159,7 @@ public:
         CV.push_back(CapabilityInt4TypeINTEL);
         return CV;
       }
-      CV.push_back(CapabilityArbitraryPrecisionIntegersALTERA);
+      CV.push_back(static_cast<Capability>(5844));
       return CV;
     }
     case 8:
@@ -176,7 +176,7 @@ public:
     default:
       if (Module->isAllowedToUseExtension(
               ExtensionID::SPV_ALTERA_arbitrary_precision_integers))
-        CV.push_back(CapabilityArbitraryPrecisionIntegersALTERA);
+        CV.push_back(static_cast<Capability>(5844));
     }
     return CV;
   }
