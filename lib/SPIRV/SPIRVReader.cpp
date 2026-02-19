@@ -1820,13 +1820,18 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                              ? GlobalValue::UnnamedAddr::Global
                              : GlobalValue::UnnamedAddr::None);
     LVar->setInitializer(Initializer);
-    if (BVar->hasDecorate(DecorationUserTypeGOOGLE) &&
-        M->getTargetTriple().getVendor() == Triple::VendorType::AMD) {
-      const auto Dec = BM->get<SPIRVString>(
-          *BVar->getDecorate(DecorationUserTypeGOOGLE).cbegin());
-      LVar->setExternallyInitialized(Dec->getStr() == "externally_initialized");
+    if (M->getTargetTriple().isAMDGCN()) {
+      if (BVar->hasDecorate(DecorationUserTypeGOOGLE)) {
+        // This is how the Translator stashes externally initialized
+        // TODO: unify with the BE
+        const auto Dec = BM->get<SPIRVString>(
+            *BVar->getDecorate(DecorationUserTypeGOOGLE).cbegin());
+        LVar->setExternallyInitialized(Dec->getStr() == "externally_initialized");
+      } else if (BVar->hasDecorate(DecorationHostAccessINTEL)) {
+        // This is how the BE stashes externally_initialized
+        LVar->setExternallyInitialized(true);
+      }
     }
-
     if (IsVectorCompute) {
       LVar->addAttribute(kVCMetadata::VCGlobalVariable);
       SPIRVWord Offset;
