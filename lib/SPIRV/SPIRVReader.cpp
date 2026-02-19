@@ -3452,6 +3452,9 @@ void SPIRVToLLVM::transFunctionAttrs(SPIRVFunction *BF, Function *F) {
       default:
         break; // do nothing
       }
+      // AMDGPU doesn't use ByVal, it is actually a masquerading ByRef.
+      if (M->getTargetTriple().isAMDGCN() && LLVMKind == Attribute::ByVal)
+        LLVMKind = Attribute::ByRef;
       // Make sure to use a correct constructor for a typed/typeless attribute
       auto A = AttrTy ? Attribute::get(*Context, LLVMKind, AttrTy)
                       : (LLVMKind != Attribute::Captures)
@@ -3585,6 +3588,22 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
         Intrinsic::getOrInsertDeclaration(
             M, Intrinsic::memset, {FT->getParamType(0), FT->getParamType(2)})
             ->getName();
+  }
+
+  // The name mangling here is broken, as it'd have used the SPIR-V AS Map, so
+  // we have to fix it here and call the intrinsic.
+  // TODO: maybe handle memcpy_inline and memcpy_atomic.
+  if (M->getTargetTriple().isAMDGCN() &&
+      FuncNameRef.starts_with("spirv.llvm_memcpy_p")) {
+    Type *DstPtrTy = FT->getParamType(0);
+    Type *SrcPtrTy = FT->getParamType(1);
+    Type *SizeTy = FT->getParamType(2);
+    Function *F =
+        Intrinsic::getOrInsertDeclaration(M, Intrinsic::memcpy,
+                                          {DstPtrTy, SrcPtrTy, SizeTy});
+    F = cast<Function>(mapValue(BF, F));
+    mapFunction(BF, F);
+    return F;
   }
 
   // Special handling for spirv.llvm_umul_with_overflow_* functions
