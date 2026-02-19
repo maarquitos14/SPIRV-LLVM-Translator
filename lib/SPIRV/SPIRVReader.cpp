@@ -1242,7 +1242,8 @@ static void applyNoIntegerWrapDecorations(const SPIRVValue *BV,
 
 void SPIRVToLLVM::applyFPFastMathModeDecorations(const SPIRVValue *BV,
                                                  Instruction *Inst) {
-  if (!isa<FPMathOperator>(Inst))
+  if (!isa<FPMathOperator>(Inst) &&
+      (!M->getTargetTriple().isAMDGCN() || !isa<CallBase>(Inst)))
     return;
 
   SPIRVWord V{0};
@@ -5582,12 +5583,12 @@ bool SPIRVToLLVM::transAlign(SPIRVValue *BV, Value *V) {
   return true;
 }
 
-static Instruction *transLLVMFromExtInst(SPIRVToLLVM &Reader, OCLExtOpKind Op,
-                                         SPIRVExtInst *BC, Type *RetTy,
-                                         std::vector<Type *> ArgTys,
-                                         BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transLLVMFromExtInst(SPIRVExtInst *BC, Type *RetTy,
+                                               std::vector<Type *> ArgTys,
+                                               BasicBlock *BB) {
   opaquifyTypedPointers(ArgTys);
 
+  auto Op = static_cast<OCLExtOpKind>(BC->getExtOp());
   Intrinsic::ID ID = Intrinsic::not_intrinsic;
   ArrayRef Formals(ArgTys);
   switch (Op) {
@@ -5775,7 +5776,7 @@ static Instruction *transLLVMFromExtInst(SPIRVToLLVM &Reader, OCLExtOpKind Op,
       F = Intrinsic::getOrInsertDeclaration(M, ID, Formals);
     }
 
-    auto Actuals = Reader.transValue(BC->getArgValues(), F, BB);
+    auto Actuals = transValue(BC->getArgValues(), F, BB);
 
     if (ID == Intrinsic::frexp) { // TODO: this should've been done in the FE.
       auto CI = CallInst::Create(F, {Actuals[0]}, BC->getName(), BB);
@@ -5790,7 +5791,6 @@ static Instruction *transLLVMFromExtInst(SPIRVToLLVM &Reader, OCLExtOpKind Op,
   CallInst *CI = CallInst::Create(F, Actuals, BC->getName(), BB);
   addFnAttr(CI, Attribute::NoUnwind);
   applyFPFastMathModeDecorations(BC, CI);
-  // CI->setFast(true);
 
   return CI;
 }
@@ -5858,9 +5858,8 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
     }
     }
   }
-  if (M->getTargetTriple().getVendor() == Triple::VendorType::AMD)
-    return transLLVMFromExtInst(
-        *this, ExtOp, BC, RetTy, std::move(ArgTypes), BB);
+  if (M->getTargetTriple().isAMDGCN())
+    return transLLVMFromExtInst(BC, RetTy, std::move(ArgTypes), BB);
 
   std::string MangledName =
       getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, RetTy);

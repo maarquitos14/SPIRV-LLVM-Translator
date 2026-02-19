@@ -104,6 +104,8 @@ public:
                                      bool CreatePlaceHolder = true);
   bool transDecoration(SPIRVValue *, Value *);
   bool transAlign(SPIRVValue *, Value *);
+  Instruction *transLLVMFromExtInst(SPIRVExtInst *BC, Type *RetTy,
+                                    std::vector<Type *> ArgTys, BasicBlock *BB);
   Instruction *transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB);
   void transAuxDataInst(SPIRVExtInst *BC);
   std::vector<Value *> transValue(const std::vector<SPIRVValue *> &,
