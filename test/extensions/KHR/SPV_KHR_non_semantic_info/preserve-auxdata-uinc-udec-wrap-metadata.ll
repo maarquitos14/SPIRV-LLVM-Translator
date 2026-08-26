@@ -25,14 +25,8 @@
 ; RUN: llvm-spirv %s -o %t.noaux.spv
 ; RUN: spirv-val %t.noaux.spv
 
-; With auxdata it still does not, for the reason documented in
-; preserve-auxdata-amdgpu-atomic-metadata.ll: AuxData forward-references a
-; result <id> from inside a function body. Pin it so that fixing it is not
-; silent.
 ; RUN: llvm-spirv %s -o %t.aux.spv --spirv-preserve-auxdata
-; RUN: not spirv-val %t.aux.spv 2>&1 | FileCheck %s --check-prefix=CHECK-INVALID-FWD
-
-; CHECK-INVALID-FWD: has not been defined
+; RUN: spirv-val %t.aux.spv
 
 ; RUN: not llvm-spirv %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 --spirv-ext=-SPV_KHR_non_semantic_info -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
 

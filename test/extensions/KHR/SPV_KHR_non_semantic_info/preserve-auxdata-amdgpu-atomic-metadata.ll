@@ -21,19 +21,8 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.noaux.spv
 ; RUN: spirv-val %t.noaux.spv
 
-; The AuxData instructions go in the module-level section, but the Target
-; operand of InstructionMetadata is the result <id> of an atomic defined inside
-; a function body, so it is a forward reference. That is intentional -- the
-; instruction is non-semantic and its result is never consumed, and
-; NonSemantic.AuxData.asciidoc permits it -- but spirv-val implements no such
-; relaxation and rejects the module. Pin that down so the day validation starts
-; passing is not silent: drop the "not" and the CHECK-INVALID prefix once
-; SPIRV-Tools accepts the forward reference, or once the instructions are moved
-; into the function body after their target.
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.aux.spv --spirv-preserve-auxdata
-; RUN: not spirv-val %t.aux.spv 2>&1 | FileCheck %s --check-prefix=CHECK-INVALID
-
-; CHECK-INVALID: has not been defined
+; RUN: spirv-val %t.aux.spv
 
 ; RUN: not llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,-SPV_KHR_non_semantic_info %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
 
