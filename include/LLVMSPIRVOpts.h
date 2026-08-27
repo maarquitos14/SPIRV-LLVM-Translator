@@ -299,6 +299,13 @@ public:
   void setUseLLVMTarget(bool Flag) noexcept { UseLLVMTarget = Flag; }
   bool getUseLLVMTarget() const noexcept { return UseLLVMTarget; }
 
+  void setSPIRVTargetTriple(std::string Triple) noexcept {
+    SPIRVTargetTriple = std::move(Triple);
+  }
+  llvm::StringRef getSPIRVTargetTriple() const noexcept {
+    return SPIRVTargetTriple;
+  }
+
   void setFnVarCategory(uint32_t Category) noexcept {
     FnVarCategory = Category;
   }
@@ -428,6 +435,9 @@ private:
 
   // Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target
   bool UseLLVMTarget = false;
+
+  // Reverse-translation target triple; empty = derive from the addressing model.
+  std::string SPIRVTargetTriple = "";
 };
 
 } // namespace SPIRV
