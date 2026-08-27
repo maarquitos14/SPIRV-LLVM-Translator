@@ -436,7 +436,8 @@ private:
   // Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target
   bool UseLLVMTarget = false;
 
-  // Reverse-translation target triple; empty = derive from the addressing model.
+  // Reverse-translation target triple; empty = derive from the addressing
+  // model.
   std::string SPIRVTargetTriple = "";
 };
 
