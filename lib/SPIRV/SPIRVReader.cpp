@@ -4299,11 +4299,14 @@ bool SPIRVToLLVM::transAddressingModel() {
                   std::to_string(BM->getAddressingModel()));
   }
 
-  // Optional override replaces the triple only, keeping the data layout derived
-  // above, to enable target-specific reverse translation keyed off the triple.
+  // Optional override replaces the triple.
   StringRef Override = BM->getTargetTripleOverride();
-  if (!Override.empty())
-    M->setTargetTriple(Triple(Override));
+  if (!Override.empty()) {
+    Triple TT(Triple::normalize(Override));
+    SPIRVCKRT(TT.getArch() != Triple::UnknownArch, InvalidTargetTripleOverride,
+              Override.str());
+    M->setTargetTriple(TT);
+  }
 
   return true;
 }

@@ -300,9 +300,9 @@ static cl::opt<bool> SPIRVUseLLVMSPIRVBackendTarget(
 
 static cl::opt<std::string> SPIRVTargetTriple(
     "spirv-target-triple",
-    cl::desc("Override the target triple (not the data layout) of the module "
-             "produced by reverse translation (-r). Default: derived from the "
-             "SPIR-V addressing model."),
+    cl::desc("Override the target triple of the module produced by reverse "
+             "translation (-r). The data layout follows the triple. Default: "
+             "derived from the SPIR-V addressing model."),
     cl::init(""));
 
 static cl::opt<uint32_t> FnVarCategory(
