@@ -6032,7 +6032,15 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
+  const SPIRV::TranslatorOpts *EffectiveOpts = &Opts;
+  SPIRV::TranslatorOpts AdjustedOpts;
+  if (!Opts.getSPIRVTargetTriple().empty()) {
+    AdjustedOpts = Opts;
+    AdjustedOpts.deriveTargetAddrSpaces();
+    EffectiveOpts = &AdjustedOpts;
+  }
+  std::unique_ptr<SPIRVModule> BM(
+      SPIRVModule::createSPIRVModule(*EffectiveOpts));
 
   IS >> *BM;
   if (!BM->isModuleValid()) {

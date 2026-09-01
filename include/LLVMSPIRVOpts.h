@@ -291,6 +291,10 @@ public:
     return mapAddrSpace(SPIRAS_Private);
   }
 
+  /// Install the built-in address-space map and program address space for the
+  /// current target triple, if known.
+  void deriveTargetAddrSpaces();
+
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
     SPIRVBuiltinFormat = Value;
   }
