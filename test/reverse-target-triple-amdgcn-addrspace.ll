@@ -1,10 +1,9 @@
 ; Test that --spirv-target-triple derives the address-space map from the target
 ; triple during reverse-translation.
 
-; RUN: llvm-as < %s -o %t.bc
 ; SPV_INTEL_usm_storage_classes preserves the GlobalDevice/GlobalHost storage
 ; classes through forward translation so the reverse map is exercised for them.
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
+; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
 
 ; Positive: AMDGCN override remaps to the AMDGPU convention.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
