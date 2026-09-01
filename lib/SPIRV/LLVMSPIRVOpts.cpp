@@ -44,10 +44,55 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <llvm/Support/AMDGPUAddrSpace.h>
+#include <llvm/TargetParser/Triple.h>
 #include <optional>
 
 using namespace llvm;
 using namespace SPIRV;
+
+namespace {
+// AddrSpaceMap is a positional std::array; Map is indexed by SPIRAS_*.
+struct TargetAddrSpaceMapping {
+  Triple::ArchType Arch;
+  AddrSpaceMap Map;
+  // Pinned so getFunctionProgramAddrSpace() does not fall back to the private
+  // AS and emit a spurious -P<n> in the datalayout.
+  uint32_t ProgramAS;
+};
+
+constexpr TargetAddrSpaceMapping BuiltinAddrSpaceMaps[] = {
+    {Triple::amdgpu,
+     {
+         AMDGPUAS::PRIVATE_ADDRESS,    // SPIRAS_Private
+         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_Global
+         AMDGPUAS::CONSTANT_ADDRESS,   // SPIRAS_Constant
+         AMDGPUAS::LOCAL_ADDRESS,      // SPIRAS_Local
+         AMDGPUAS::FLAT_ADDRESS,       // SPIRAS_Generic
+         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_GlobalDevice
+         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_GlobalHost
+         AMDGPUAS::BUFFER_FAT_POINTER, // SPIRAS_Input
+         AMDGPUAS::BUFFER_RESOURCE,    // SPIRAS_Output
+         // TODO: FLAT clashes with BUFFER_STRIDED_POINTER; may need revisiting.
+         AMDGPUAS::FLAT_ADDRESS,       // SPIRAS_CodeSectionINTEL
+     },
+     AMDGPUAS::FLAT_ADDRESS},
+};
+} // namespace
+
+void TranslatorOpts::deriveTargetAddrSpaces() {
+  // An explicit --spirv-addrspace-map wins.
+  if (getAddrSpaceMap())
+    return;
+  Triple TT(Triple::normalize(getSPIRVTargetTriple()));
+  for (const auto &Entry : BuiltinAddrSpaceMaps) {
+    if (TT.getArch() != Entry.Arch)
+      continue;
+    setAddrSpaceMap(Entry.Map);
+    setFunctionProgramAddrSpace(Entry.ProgramAS);
+    return;
+  }
+}
 
 void TranslatorOpts::enableAllExtensions() {
 #define EXT(X) ExtStatusMap[ExtensionID::X] = true;
