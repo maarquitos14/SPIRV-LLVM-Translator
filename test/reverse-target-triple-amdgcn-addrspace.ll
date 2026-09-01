@@ -4,20 +4,18 @@
 ; reverse map is exercised for them.
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
 
-; amdgcn override: AMDGPU convention.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-AMDGCN
 
-; No override: default SPIR numbering.
 ; RUN: llvm-spirv -r %t.spv \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
 
-; Untabled (non-AMDGCN) triple: falls through to SPIR identity.
+; Untabled (non-AMDGCN) triple: falls through to default.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=nvptx64-nvidia-cuda \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
 
-; Explicit --spirv-addrspace-map wins over triple-derived. 0:5: private alloca ->
-; addrspace(5) (verifies); other classes identity.
+; Explicit --spirv-addrspace-map beats the triple-derived map: 0:5 remaps only
+; Private (0) -> 5.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   --spirv-addrspace-map=0:5 \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-OVERRIDE
