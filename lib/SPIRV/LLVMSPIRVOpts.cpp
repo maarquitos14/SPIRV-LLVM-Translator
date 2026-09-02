@@ -74,7 +74,7 @@ constexpr TargetAddrSpaceMapping BuiltinAddrSpaceMaps[] = {
          AMDGPUAS::BUFFER_FAT_POINTER, // SPIRAS_Input
          AMDGPUAS::BUFFER_RESOURCE,    // SPIRAS_Output
          // TODO: FLAT clashes with BUFFER_STRIDED_POINTER; may need revisiting.
-         AMDGPUAS::FLAT_ADDRESS,       // SPIRAS_CodeSectionINTEL
+         AMDGPUAS::FLAT_ADDRESS, // SPIRAS_CodeSectionINTEL
      },
      AMDGPUAS::FLAT_ADDRESS},
 };
