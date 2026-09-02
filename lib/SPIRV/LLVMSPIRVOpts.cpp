@@ -89,7 +89,9 @@ void TranslatorOpts::deriveTargetAddrSpaces() {
     if (TT.getArch() != Entry.Arch)
       continue;
     setAddrSpaceMap(Entry.Map);
-    setFunctionProgramAddrSpace(Entry.ProgramAS);
+    // An explicit --spirv-function-program-addrspace wins.
+    if (!FunctionProgramAS.has_value())
+      setFunctionProgramAddrSpace(Entry.ProgramAS);
     return;
   }
 }
