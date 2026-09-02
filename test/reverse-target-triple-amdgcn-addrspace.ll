@@ -1,4 +1,17 @@
 ; --spirv-target-triple derives the reverse address-space map.
+;
+; Reverse translation renumbers each address space from SPIR to the target's.
+; Under amdgcn the derived map applies; default/SPIR keeps SPIR numbers. AMDGPU
+; flat is AS 0, which LLVM prints as a bare `ptr` (addrspace(0) elided).
+;
+;   class          SPIR   AMDGPU
+;   private          0       5
+;   global           1       1
+;   constant         2       4
+;   local            3       3
+;   generic          4       0   (bare `ptr`)
+;   GlobalDevice     5       1
+;   GlobalHost       6       1
 
 ; SPV_INTEL_usm_storage_classes: keeps GlobalDevice/GlobalHost forward, so the
 ; reverse map is exercised for them.
@@ -39,14 +52,14 @@ target triple = "spir64-unknown-unknown"
 ; --spirv-function-program-addrspace=3 beat the triple pin.
 ; CHECK-FPAS: target datalayout = {{.*}}-A5-P3
 
-; Global (1) -> AMDGPU GLOBAL (1); addrspace(1) every case.
+; global: SPIR 1 -> AMDGPU 1 (unchanged), so addrspace(1) every case.
 ; CHECK-AMDGCN: @gv = {{.*}}addrspace(1){{.*}}global i32
 ; CHECK-DEFAULT: @gv = {{.*}}addrspace(1){{.*}}global i32
 ; CHECK-OVERRIDE: @gv = {{.*}}addrspace(1){{.*}}global i32
 @gv = addrspace(1) global i32 0, align 4
 
-; Global (1), local (3) stable. Generic (4) -> AMDGPU flat (0) under amdgcn;
-; stays (4) under default and 0:5.
+; global (1), local (3) unchanged. generic: SPIR 4 -> AMDGPU 0 (flat) under
+; amdgcn, i.e. bare `ptr`; stays addrspace(4) under default and 0:5.
 ; CHECK-AMDGCN: define{{.*}} @test_stable_and_generic({{.*}}ptr addrspace(1){{.*}}ptr addrspace(3){{.*}}ptr{{( addrspace\(0\))?}}
 ; CHECK-DEFAULT: define{{.*}} @test_stable_and_generic({{.*}}ptr addrspace(1){{.*}}ptr addrspace(3){{.*}}ptr addrspace(4)
 ; CHECK-OVERRIDE: define{{.*}} @test_stable_and_generic({{.*}}ptr addrspace(1){{.*}}ptr addrspace(3){{.*}}ptr addrspace(4)
@@ -56,7 +69,7 @@ define spir_kernel void @test_stable_and_generic(ptr addrspace(1) %global_p,
   ret void
 }
 
-; Constant (2) -> AMDGPU CONSTANT (4) under amdgcn; stays (2) under default and 0:5.
+; constant: SPIR 2 -> AMDGPU 4 under amdgcn; stays addrspace(2) under default and 0:5.
 ; CHECK-AMDGCN: define{{.*}} @test_constant({{.*}}ptr addrspace(4)
 ; CHECK-DEFAULT: define{{.*}} @test_constant({{.*}}ptr addrspace(2)
 ; CHECK-OVERRIDE: define{{.*}} @test_constant({{.*}}ptr addrspace(2)
@@ -64,7 +77,7 @@ define spir_kernel void @test_constant(ptr addrspace(2) %const_p) {
   ret void
 }
 
-; Private alloca (0) -> AMDGPU PRIVATE (5) under amdgcn; AS 0 under default;
+; private: alloca SPIR 0 -> AMDGPU 5 under amdgcn; AS 0 under default;
 ; addrspace(5) under 0:5.
 ; CHECK-AMDGCN: define{{.*}} @test_private(
 ; CHECK-AMDGCN: alloca i32,{{.*}} addrspace(5)
@@ -78,7 +91,7 @@ define spir_func i32 @test_private() {
   ret i32 %v
 }
 
-; GlobalDevice (5), GlobalHost (6) -> AMDGPU GLOBAL (1) under amdgcn; stay (5)/(6)
+; GlobalDevice (5), GlobalHost (6) -> AMDGPU 1 under amdgcn; stay addrspace(5)/(6)
 ; under default and 0:5 (overrides index 0 only).
 ; CHECK-AMDGCN: define{{.*}} @test_usm({{.*}}ptr addrspace(1){{.*}}ptr addrspace(1)
 ; CHECK-DEFAULT: define{{.*}} @test_usm({{.*}}ptr addrspace(5){{.*}}ptr addrspace(6)
