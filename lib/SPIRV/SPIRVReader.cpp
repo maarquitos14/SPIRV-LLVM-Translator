@@ -4302,13 +4302,6 @@ bool SPIRVToLLVM::transAddressingModel() {
                   std::to_string(BM->getAddressingModel()));
   }
 
-<<<<<<< HEAD
-  // Optional override replaces the triple only, keeping the data layout derived
-  // above, to enable target-specific reverse translation keyed off the triple.
-  StringRef Override = BM->getTargetTripleOverride();
-  if (!Override.empty())
-    M->setTargetTriple(Triple(Override));
-=======
   // Optional override replaces the triple.
   StringRef Override = BM->getTargetTripleOverride();
   if (!Override.empty()) {
@@ -4317,7 +4310,6 @@ bool SPIRVToLLVM::transAddressingModel() {
               Override.str());
     M->setTargetTriple(TT);
   }
->>>>>>> khronos-origin/main
 
   return true;
 }
