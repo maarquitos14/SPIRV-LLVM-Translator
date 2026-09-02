@@ -10,9 +10,14 @@
 ; RUN: llvm-spirv -r %t.spv \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
 
-; Untabled (non-AMDGCN) triple: falls through to default.
-; RUN: llvm-spirv -r %t.spv --spirv-target-triple=nvptx64-nvidia-cuda \
+; Explicit SPIR triple: default address space map, no error.
+; RUN: llvm-spirv -r %t.spv --spirv-target-triple=spir64-unknown-unknown \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
+
+; Untabled non-SPIR triple: no map, errors.
+; RUN: not llvm-spirv -r %t.spv --spirv-target-triple=nvptx64-nvidia-cuda \
+; RUN:   -o - 2>&1 | FileCheck %s --check-prefix=CHECK-ERR
+; CHECK-ERR: No address space map for target triple 'nvptx64-nvidia-cuda'
 
 ; Explicit --spirv-addrspace-map beats the triple-derived map: 0:5 remaps only
 ; Private (0) -> 5.

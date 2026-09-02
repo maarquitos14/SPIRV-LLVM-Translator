@@ -6036,7 +6036,12 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
   SPIRV::TranslatorOpts AdjustedOpts;
   if (!Opts.getSPIRVTargetTriple().empty()) {
     AdjustedOpts = Opts;
-    AdjustedOpts.deriveTargetAddrSpaces();
+    if (!AdjustedOpts.deriveTargetAddrSpaces()) {
+      ErrMsg = ("No address space map for target triple '" +
+                Twine(Opts.getSPIRVTargetTriple()) + "'")
+                   .str();
+      return nullptr;
+    }
     EffectiveOpts = &AdjustedOpts;
   }
   std::unique_ptr<SPIRVModule> BM(

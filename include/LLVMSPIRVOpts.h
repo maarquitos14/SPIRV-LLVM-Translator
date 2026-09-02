@@ -292,8 +292,9 @@ public:
   }
 
   /// Install the built-in address-space map and program address space for the
-  /// current target triple, if known.
-  void deriveTargetAddrSpaces();
+  /// target triple. Returns false for an untabled non-SPIR triple, which has no
+  /// map and would otherwise emit a triple/layout-mismatched module.
+  bool deriveTargetAddrSpaces();
 
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
     SPIRVBuiltinFormat = Value;

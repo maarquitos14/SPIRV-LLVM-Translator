@@ -80,10 +80,10 @@ constexpr TargetAddrSpaceMapping BuiltinAddrSpaceMaps[] = {
 };
 } // namespace
 
-void TranslatorOpts::deriveTargetAddrSpaces() {
+bool TranslatorOpts::deriveTargetAddrSpaces() {
   // An explicit --spirv-addrspace-map wins.
   if (getAddrSpaceMap())
-    return;
+    return true;
   Triple TT(Triple::normalize(getSPIRVTargetTriple()));
   for (const auto &Entry : BuiltinAddrSpaceMaps) {
     if (TT.getArch() != Entry.Arch)
@@ -92,8 +92,12 @@ void TranslatorOpts::deriveTargetAddrSpaces() {
     // An explicit --spirv-function-program-addrspace wins.
     if (!FunctionProgramAS.has_value())
       setFunctionProgramAddrSpace(Entry.ProgramAS);
-    return;
+    return true;
   }
+  // SPIR/SPIRV: default is correct. Any other valid target lacking a map: error
+  // rather than emit SPIR numbering under it. UnknownArch is explicitly allowed
+  // here because it will error out later with a better, more explicit error.
+  return TT.isSPIR() || TT.isSPIRV() || TT.getArch() == Triple::UnknownArch;
 }
 
 void TranslatorOpts::enableAllExtensions() {
